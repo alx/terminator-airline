@@ -182,10 +182,10 @@
   <nav aria-label="Main navigation">
     <a class="nav-logo" href="/" aria-label="Terminator Airline home">🌅 <span>Terminator</span> Airline</a>
     <ul class="nav-links" role="list">
-      <li><a href="/flights/">✈️ Flights</a></li>
-      <li><a href="/how-it-works/">How it works</a></li>
-      <li><a href="/api/">API</a></li>
-      <li><a href="/about/">About</a></li>
+      <li><a href="{{ "flights/" | absLangURL }}">✈️ Flights</a></li>
+      <li><a href="{{ "how-it-works/" | absLangURL }}">How it works</a></li>
+      <li><a href="{{ "api/" | absLangURL }}">API</a></li>
+      <li><a href="{{ "about/" | absLangURL }}">About</a></li>
     </ul>
   </nav>
 
@@ -197,8 +197,8 @@
       Find flights that cross the <strong>solar terminator</strong> — the moving boundary between day and night on Earth. Score every route. Sit on the right side.
     </p>
     <div class="cta-group">
-      <a href="/flights/" class="btn btn-primary" fetchpriority="high">✈️ Find flights</a>
-      <a href="/how-it-works/" class="btn btn-secondary">How it works</a>
+      <a href="{{ "flights/" | absLangURL }}" class="btn btn-primary" fetchpriority="high">✈️ Find flights</a>
+      <a href="{{ "how-it-works/" | absLangURL }}" class="btn btn-secondary">How it works</a>
     </div>
 
     <!-- Visual terminator diagram -->
@@ -399,7 +399,7 @@
         <p>Free: airports, terminator line<br>
         Paid: flight scores, seat recommendations<br>
         Payment via x402 protocol on Base network.</p>
-        <a href="/api/" class="btn btn-secondary" style="margin-top:1rem;display:inline-flex">View API docs →</a>
+        <a href="{{ "api/" | absLangURL }}" class="btn btn-secondary" style="margin-top:1rem;display:inline-flex">View API docs →</a>
       </div>
       <pre class="code-block" aria-label="API example request">GET /flights/score?airport=BKK
                   &date=2026-03-28
@@ -420,8 +420,8 @@
     <p>
       🌅 <strong>Terminator Airline</strong> ·
       <a href="https://github.com/alx/terminator-airline">GitHub</a> ·
-      <a href="/api/">API</a> ·
-      <a href="{{ .Site.BaseURL }}llms.txt">llms.txt</a>
+      <a href="{{ "api/" | absLangURL }}">API</a> ·
+      <a href="{{ "llms.txt" | absLangURL }}">llms.txt</a>
     </p>
     <p style="margin-top:.4rem">Built in Koh Samui 🇹🇭 · Data via OpenSky Network</p>
   </footer>
