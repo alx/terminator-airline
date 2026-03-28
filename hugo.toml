@@ -2,36 +2,32 @@ baseURL = "https://alx.github.io/terminator-airline/"
 languageCode = "en"
 title = "Terminator Airline"
 theme = "PaperMod"
+
 [pagination]
   pagerSize = 20
+
+[minify]
+  disableXML = true
+  minifyOutput = true
 
 [params]
   env = "production"
   title = "Terminator Airline"
-  description = "Find flights along the terminator line — golden hour at 35,000 ft."
-  keywords = ["flight", "terminator", "golden hour", "photography", "sunset", "sunrise"]
+  description = "Find flights along the solar terminator line — book the right seat for golden hour at 35,000 ft."
+  keywords = ["flight", "terminator line", "golden hour", "sunset flight", "airplane photography", "South East Asia flights"]
   author = "Alex"
   defaultTheme = "dark"
   disableThemeToggle = false
   ShowReadingTime = false
   ShowShareButtons = false
-  ShowPostNavLinks = true
+  ShowPostNavLinks = false
   ShowBreadCrumbs = false
-  ShowCodeCopyButtons = false
+  ShowCodeCopyButtons = true
   ShowToc = false
+  disableHugoGeneratorInject = true
 
-  [params.homeInfoParams]
-    Title = "🌅 Terminator Airline"
-    Content = """
-Find flights that cross the **terminator line** — the boundary between day and night on Earth.
-
-Book the right seat. Catch the light.
-
-- ✈️ Flights ranked by terminator proximity score
-- 🪟 Seat side recommendation (port vs starboard)
-- 🛫 Departures & arrivals during golden hour
-- 🌏 Coverage across South East Asia
-"""
+  [params.assets]
+    disableFingerprinting = false
 
   [[params.socialIcons]]
     name = "github"

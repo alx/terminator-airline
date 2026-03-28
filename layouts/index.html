@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.Language.Lang }}" dir="auto">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Site.Title }} — Golden Hour Flights</title>
+  <meta name="description" content="{{ .Site.Params.description }}">
+  <meta name="keywords" content="{{ delimit .Site.Params.keywords ", " }}">
+  <meta name="author" content="{{ .Site.Params.author }}">
+  <meta name="theme-color" content="#0a0a0f">
+  <link rel="canonical" href="{{ .Permalink }}">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:title" content="{{ .Site.Title }} — Golden Hour Flights">
+  <meta property="og:description" content="{{ .Site.Params.description }}">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="{{ .Site.Title }}">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ .Site.Title }}">
+  <meta name="twitter:description" content="{{ .Site.Params.description }}">
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://api.terminator-airline.com">
+  <link rel="dns-prefetch" href="https://api.terminator-airline.com">
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Terminator Airline",
+    "url": "{{ .Site.BaseURL }}",
+    "description": "{{ .Site.Params.description }}",
+    "applicationCategory": "TravelApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0.001",
+      "priceCurrency": "USD",
+      "description": "Per flight terminator score query"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "{{ .Site.Params.author }}"
+    },
+    "areaServed": {
+      "@type": "Place",
+      "name": "South East Asia"
+    }
+  }
+  </script>
+
+  <style>
+    /* Critical CSS — inlined for zero render-blocking */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a0f;
+      --bg2:#111118;
+      --bg3:#1a1a28;
+      --border:#2a2a3a;
+      --text:#e8e8f0;
+      --muted:#8888a8;
+      --accent:#ff7b35;
+      --accent2:#ff4e6b;
+      --gold:#ffb347;
+      --blue:#4a90e2;
+      --green:#4ade80;
+      --r:0.75rem;
+    }
+    html{scroll-behavior:smooth;font-size:16px}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    /* Nav */
+    nav{position:sticky;top:0;z-index:100;background:rgba(10,10,15,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{font-weight:700;font-size:1.1rem;color:var(--text);letter-spacing:-.02em}
+    .nav-logo span{color:var(--accent)}
+    .nav-links{display:flex;gap:1.5rem;list-style:none}
+    .nav-links a{color:var(--muted);font-size:.9rem;transition:color .2s}
+    .nav-links a:hover{color:var(--text);text-decoration:none}
+    @media(max-width:600px){.nav-links{gap:.8rem}.nav-links a{font-size:.8rem}}
+
+    /* Hero */
+    .hero{min-height:92vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 1.5rem;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(255,123,53,.08) 0%,transparent 70%);pointer-events:none}
+    .hero-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,123,53,.12);border:1px solid rgba(255,123,53,.3);color:var(--accent);font-size:.8rem;font-weight:600;padding:.3rem .8rem;border-radius:999px;margin-bottom:1.5rem;letter-spacing:.05em;text-transform:uppercase}
+    .hero h1{font-size:clamp(2.4rem,6vw,4.5rem);font-weight:800;line-height:1.1;letter-spacing:-.04em;margin-bottom:1rem;background:linear-gradient(135deg,#fff 0%,var(--gold) 50%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-sub{font-size:clamp(1rem,2.5vw,1.3rem);color:var(--muted);max-width:600px;margin:0 auto 2.5rem}
+    .hero-sub strong{color:var(--text)}
+    .cta-group{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-bottom:3rem}
+    .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.75rem;border-radius:var(--r);font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,123,53,.3);text-decoration:none;color:#fff}
+    .btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{border-color:var(--muted);text-decoration:none}
+
+    /* Terminator visual */
+    .terminator-visual{width:100%;max-width:700px;margin:0 auto;height:140px;position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+    .tv-day{position:absolute;left:0;top:0;width:55%;height:100%;background:linear-gradient(180deg,#1a3a5c 0%,#2d6a9e 40%,#1e4d7a 100%)}
+    .tv-night{position:absolute;right:0;top:0;width:45%;height:100%;background:linear-gradient(180deg,#05050f 0%,#0a0a20 100%)}
+    .tv-terminator{position:absolute;left:55%;top:0;width:80px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,180,80,.15),rgba(255,100,30,.25),rgba(255,50,50,.1),transparent);transform:translateX(-50%)}
+    .tv-glow{position:absolute;left:55%;top:0;width:3px;height:100%;background:linear-gradient(180deg,var(--gold),var(--accent),var(--accent2));transform:translateX(-50%);filter:blur(6px)}
+    .tv-plane{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.8rem;filter:drop-shadow(0 0 8px rgba(255,180,80,.8))}
+    .tv-label-day{position:absolute;left:1rem;bottom:.75rem;font-size:.7rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em}
+    .tv-label-night{position:absolute;right:1rem;bottom:.75rem;font-size:.7rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.1em}
+    .tv-label-term{position:absolute;top:.5rem;left:50%;transform:translateX(-50%);font-size:.65rem;color:var(--gold);font-weight:700;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+
+    /* Score examples */
+    .section{padding:4rem 1.5rem;max-width:1100px;margin:0 auto}
+    .section-label{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:.75rem}
+    .section-title{font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:700;letter-spacing:-.03em;margin-bottom:.75rem}
+    .section-sub{color:var(--muted);max-width:560px}
+
+    /* Flight cards */
+    .flights-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-top:2rem}
+    .flight-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem;transition:border-color .2s,transform .2s}
+    .flight-card:hover{border-color:rgba(255,123,53,.4);transform:translateY(-2px)}
+    .flight-card.top{border-color:rgba(255,180,80,.3);background:linear-gradient(135deg,var(--bg2),rgba(255,123,53,.04))}
+    .fc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
+    .fc-route{font-weight:700;font-size:1.05rem;letter-spacing:.02em}
+    .fc-score{font-size:1.5rem;font-weight:800;line-height:1}
+    .fc-score.s100{color:var(--gold)}
+    .fc-score.s80{color:var(--accent)}
+    .fc-score.s60{color:var(--blue)}
+    .fc-bar{height:4px;background:var(--border);border-radius:2px;margin:.6rem 0;overflow:hidden}
+    .fc-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+    .fc-bar-fill.s100{background:linear-gradient(90deg,var(--gold),var(--accent))}
+    .fc-bar-fill.s80{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+    .fc-bar-fill.s60{background:var(--blue)}
+    .fc-meta{font-size:.8rem;color:var(--muted);display:flex;flex-direction:column;gap:.25rem}
+    .fc-seat{display:inline-flex;align-items:center;gap:.3rem;background:rgba(255,123,53,.1);border:1px solid rgba(255,123,53,.2);color:var(--accent);font-size:.75rem;font-weight:600;padding:.2rem .6rem;border-radius:4px;margin-top:.5rem}
+    .fc-label{font-size:.75rem;font-weight:600;color:var(--gold)}
+
+    /* Steps */
+    .steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.5rem;margin-top:2rem}
+    .step{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem}
+    .step-num{font-size:2rem;font-weight:800;color:var(--border);margin-bottom:.5rem;line-height:1}
+    .step h3{font-size:1rem;font-weight:700;margin-bottom:.4rem}
+    .step p{font-size:.875rem;color:var(--muted)}
+
+    /* Score table */
+    .score-table{width:100%;border-collapse:collapse;margin-top:1.5rem;font-size:.9rem}
+    .score-table th{text-align:left;padding:.6rem 1rem;font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+    .score-table td{padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04)}
+    .score-table tr:last-child td{border-bottom:none}
+    .score-table tr:hover td{background:rgba(255,255,255,.02)}
+    .badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.75rem;font-weight:700}
+    .badge-fire{background:rgba(255,180,80,.15);color:var(--gold)}
+    .badge-gold{background:rgba(255,123,53,.15);color:var(--accent)}
+    .badge-blue{background:rgba(74,144,226,.15);color:var(--blue)}
+    .badge-dim{background:rgba(136,136,168,.1);color:var(--muted)}
+
+    /* Airports grid */
+    .airports-grid{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.5rem}
+    .airport-chip{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.3rem .7rem;font-size:.8rem;font-family:monospace;color:var(--text);transition:border-color .2s}
+    .airport-chip:hover{border-color:var(--accent)}
+    .airport-chip span{color:var(--muted);font-size:.7rem}
+
+    /* API banner */
+    .api-banner{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:var(--r);padding:2rem;display:flex;gap:2rem;align-items:center;flex-wrap:wrap;margin-top:2rem}
+    .api-banner-text h3{font-size:1.3rem;font-weight:700;margin-bottom:.4rem}
+    .api-banner-text p{color:var(--muted);font-size:.9rem}
+    .code-block{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.75rem 1rem;font-family:monospace;font-size:.78rem;color:#a8d8a8;flex:1;min-width:240px;white-space:pre;overflow-x:auto}
+
+    /* Footer */
+    footer{text-align:center;padding:2rem 1.5rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);margin-top:4rem}
+    footer a{color:var(--muted)}
+    footer a:hover{color:var(--text)}
+
+    /* Divider */
+    .divider{border:none;border-top:1px solid var(--border);margin:0}
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav aria-label="Main navigation">
+    <a class="nav-logo" href="/" aria-label="Terminator Airline home">🌅 <span>Terminator</span> Airline</a>
+    <ul class="nav-links" role="list">
+      <li><a href="/flights/">✈️ Flights</a></li>
+      <li><a href="/how-it-works/">How it works</a></li>
+      <li><a href="/api/">API</a></li>
+      <li><a href="/about/">About</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero" role="banner">
+    <div class="hero-badge" aria-label="Coverage area">🌏 South East Asia</div>
+    <h1>Book the flight.<br>Catch the light.</h1>
+    <p class="hero-sub">
+      Find flights that cross the <strong>solar terminator</strong> — the moving boundary between day and night on Earth. Score every route. Sit on the right side.
+    </p>
+    <div class="cta-group">
+      <a href="/flights/" class="btn btn-primary" fetchpriority="high">✈️ Find flights</a>
+      <a href="/how-it-works/" class="btn btn-secondary">How it works</a>
+    </div>
+
+    <!-- Visual terminator diagram -->
+    <div class="terminator-visual" role="img" aria-label="Diagram showing the solar terminator line with an airplane crossing it">
+      <div class="tv-day" aria-hidden="true"></div>
+      <div class="tv-night" aria-hidden="true"></div>
+      <div class="tv-terminator" aria-hidden="true"></div>
+      <div class="tv-glow" aria-hidden="true"></div>
+      <div class="tv-plane" aria-hidden="true">✈️</div>
+      <span class="tv-label-day" aria-hidden="true">Daylight</span>
+      <span class="tv-label-night" aria-hidden="true">Night</span>
+      <span class="tv-label-term" aria-hidden="true">← Terminator Line →</span>
+    </div>
+  </header>
+
+  <hr class="divider">
+
+  <!-- Sample flights -->
+  <section class="section" aria-labelledby="flights-heading">
+    <div class="section-label">Today's top picks</div>
+    <h2 class="section-title" id="flights-heading">Flights near the terminator</h2>
+    <p class="section-sub">Each flight scored in real time — ranked by proximity to the solar terminator line.</p>
+
+    <div class="flights-grid">
+      <article class="flight-card top" aria-label="Top flight BKK to SIN">
+        <div class="fc-header">
+          <div>
+            <div class="fc-label">🔥 Terminator crossing</div>
+            <div class="fc-route">BKK → SIN</div>
+          </div>
+          <div class="fc-score s100" aria-label="Score 94">94</div>
+        </div>
+        <div class="fc-bar"><div class="fc-bar-fill s100" style="width:94%"></div></div>
+        <div class="fc-meta">
+          <span>⏰ Departure 17:45 · Duration 2h15m</span>
+          <span>🌅 Golden zone: 28 min mid-flight</span>
+          <span>Best light: 18:46 local</span>
+        </div>
+        <div class="fc-seat">🪟 Sit starboard — D/E/F seats (right side)</div>
+      </article>
+
+      <article class="flight-card" aria-label="Flight USM to BKK">
+        <div class="fc-header">
+          <div>
+            <div class="fc-label">🌅 Golden hour</div>
+            <div class="fc-route">USM → BKK</div>
+          </div>
+          <div class="fc-score s80" aria-label="Score 81">81</div>
+        </div>
+        <div class="fc-bar"><div class="fc-bar-fill s80" style="width:81%"></div></div>
+        <div class="fc-meta">
+          <span>⏰ Departure 17:55 · Duration 1h10m</span>
+          <span>🌅 Golden zone: 15 min at arrival</span>
+          <span>Best light: 18:52 local</span>
+        </div>
+        <div class="fc-seat">🪟 Sit port — A/B/C seats (left side)</div>
+      </article>
+
+      <article class="flight-card" aria-label="Flight SIN to KUL">
+        <div class="fc-header">
+          <div>
+            <div class="fc-label">🌤 Partial golden</div>
+            <div class="fc-route">SIN → KUL</div>
+          </div>
+          <div class="fc-score s60" aria-label="Score 62">62</div>
+        </div>
+        <div class="fc-bar"><div class="fc-bar-fill s60" style="width:62%"></div></div>
+        <div class="fc-meta">
+          <span>⏰ Departure 18:10 · Duration 55m</span>
+          <span>🌅 Golden zone: 8 min at departure</span>
+          <span>Best light: 18:18 local</span>
+        </div>
+        <div class="fc-seat">🪟 Sit starboard — D/E/F seats (right side)</div>
+      </article>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- How it works -->
+  <section class="section" aria-labelledby="how-heading">
+    <div class="section-label">Simple process</div>
+    <h2 class="section-title" id="how-heading">Three steps to golden hour</h2>
+    <p class="section-sub">We do the solar math. You book the ticket.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Choose airport & date</h3>
+        <p>Pick any of 18 covered South East Asia airports and a departure date.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Get terminator scores</h3>
+        <p>Every flight is scored 0–100 based on how close it crosses the solar terminator line.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Book the right seat</h3>
+        <p>We tell you which side of the plane to sit on — port (A/B/C) or starboard (D/E/F) — for the best light.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Score table -->
+  <section class="section" aria-labelledby="scores-heading">
+    <div class="section-label">Scoring system</div>
+    <h2 class="section-title" id="scores-heading">What the score means</h2>
+    <p class="section-sub">Based on solar altitude along the full flight path.</p>
+
+    <table class="score-table" role="table">
+      <thead>
+        <tr>
+          <th scope="col">Score</th>
+          <th scope="col">Label</th>
+          <th scope="col">Solar altitude</th>
+          <th scope="col">What you see</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>90–100</strong></td>
+          <td><span class="badge badge-fire">🔥 Terminator crossing</span></td>
+          <td>±1° from horizon</td>
+          <td>Deep indigo to burning orange — the full spectrum</td>
+        </tr>
+        <tr>
+          <td><strong>70–89</strong></td>
+          <td><span class="badge badge-gold">🌅 Golden hour</span></td>
+          <td>1° – 6° above/below</td>
+          <td>Long shadows, warm orange light, pink clouds</td>
+        </tr>
+        <tr>
+          <td><strong>50–69</strong></td>
+          <td><span class="badge badge-blue">🌤 Partial golden</span></td>
+          <td>6° – 18°</td>
+          <td>Blue hour, diffuse warm light, colored horizon</td>
+        </tr>
+        <tr>
+          <td><strong>&lt; 50</strong></td>
+          <td><span class="badge badge-dim">☀️ Daylight / night</span></td>
+          <td>&gt; 18°</td>
+          <td>Full daylight or complete darkness</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Coverage -->
+  <section class="section" aria-labelledby="airports-heading">
+    <div class="section-label">Coverage</div>
+    <h2 class="section-title" id="airports-heading">18 South East Asia airports</h2>
+    <p class="section-sub">All major hubs in the region — from Bangkok to Bali.</p>
+
+    <div class="airports-grid" role="list">
+      {{ range slice
+        (dict "code" "BKK" "name" "Bangkok")
+        (dict "code" "DMK" "name" "Don Mueang")
+        (dict "code" "HKT" "name" "Phuket")
+        (dict "code" "USM" "name" "Koh Samui")
+        (dict "code" "CNX" "name" "Chiang Mai")
+        (dict "code" "SGN" "name" "Ho Chi Minh")
+        (dict "code" "HAN" "name" "Hanoi")
+        (dict "code" "DAD" "name" "Da Nang")
+        (dict "code" "SIN" "name" "Singapore")
+        (dict "code" "KUL" "name" "Kuala Lumpur")
+        (dict "code" "PEN" "name" "Penang")
+        (dict "code" "CGK" "name" "Jakarta")
+        (dict "code" "DPS" "name" "Bali")
+        (dict "code" "RGN" "name" "Yangon")
+        (dict "code" "PNH" "name" "Phnom Penh")
+        (dict "code" "REP" "name" "Siem Reap")
+        (dict "code" "VTE" "name" "Vientiane")
+        (dict "code" "MNL" "name" "Manila")
+      }}
+      <div class="airport-chip" role="listitem">
+        {{ .code }} <span>{{ .name }}</span>
+      </div>
+      {{ end }}
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- API banner -->
+  <section class="section" aria-labelledby="api-heading">
+    <div class="section-label">For developers & AI agents</div>
+    <h2 class="section-title" id="api-heading">Open API with x402 payments</h2>
+    <p class="section-sub">Query flight scores programmatically. Designed for AI agent workflows.</p>
+
+    <div class="api-banner">
+      <div class="api-banner-text">
+        <h3>0.001 USDC per query</h3>
+        <p>Free: airports, terminator line<br>
+        Paid: flight scores, seat recommendations<br>
+        Payment via x402 protocol on Base network.</p>
+        <a href="/api/" class="btn btn-secondary" style="margin-top:1rem;display:inline-flex">View API docs →</a>
+      </div>
+      <pre class="code-block" aria-label="API example request">GET /flights/score?airport=BKK
+                  &date=2026-03-28
+
+→ 402 Payment Required
+  X-Payment-Required: {
+    "amount": "0.001 USDC",
+    "network": "base"
+  }
+
+→ 200 OK  (after payment)
+  [{ "score": 94, "seat": "starboard" }]</pre>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer role="contentinfo">
+    <p>
+      🌅 <strong>Terminator Airline</strong> ·
+      <a href="https://github.com/alx/terminator-airline">GitHub</a> ·
+      <a href="/api/">API</a> ·
+      <a href="{{ .Site.BaseURL }}llms.txt">llms.txt</a>
+    </p>
+    <p style="margin-top:.4rem">Built in Koh Samui 🇹🇭 · Data via OpenSky Network</p>
+  </footer>
+
+</body>
+</html>
