@@ -1,0 +1,58 @@
+baseURL = "https://alx.github.io/terminator-airline/"
+languageCode = "en"
+title = "Terminator Airline"
+theme = "PaperMod"
+[pagination]
+  pagerSize = 20
+
+[params]
+  env = "production"
+  title = "Terminator Airline"
+  description = "Find flights along the terminator line — golden hour at 35,000 ft."
+  keywords = ["flight", "terminator", "golden hour", "photography", "sunset", "sunrise"]
+  author = "Alex"
+  defaultTheme = "dark"
+  disableThemeToggle = false
+  ShowReadingTime = false
+  ShowShareButtons = false
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = false
+  ShowCodeCopyButtons = false
+  ShowToc = false
+
+  [params.homeInfoParams]
+    Title = "🌅 Terminator Airline"
+    Content = """
+Find flights that cross the **terminator line** — the boundary between day and night on Earth.
+
+Book the right seat. Catch the light.
+
+- ✈️ Flights ranked by terminator proximity score
+- 🪟 Seat side recommendation (port vs starboard)
+- 🛫 Departures & arrivals during golden hour
+- 🌏 Coverage across South East Asia
+"""
+
+  [[params.socialIcons]]
+    name = "github"
+    url = "https://github.com/alx/terminator-airline"
+
+[menu]
+  [[menu.main]]
+    identifier = "flights"
+    name = "✈️ Flights"
+    url = "/flights/"
+    weight = 10
+  [[menu.main]]
+    identifier = "how"
+    name = "How it works"
+    url = "/how-it-works/"
+    weight = 20
+  [[menu.main]]
+    identifier = "about"
+    name = "About"
+    url = "/about/"
+    weight = 30
+
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
