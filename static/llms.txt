@@ -1,0 +1,36 @@
+# Terminator Airline
+
+> Find flights that cross the solar terminator line — the boundary between day and night on Earth. Get terminator proximity scores for flights across South East Asia, seat-side recommendations, and golden hour windows.
+
+Terminator Airline helps photographers, travelers, and sky enthusiasts find flights with the best light conditions. The API scores every flight 0–100 based on proximity to the terminator line, and tells you which seat to book.
+
+## API
+
+- [API Root](https://api.terminator-airline.com/): Entrypoint — lists all endpoints and pricing
+- [API Docs](https://api.terminator-airline.com/docs): Interactive OpenAPI / Swagger UI
+- [Airports](https://api.terminator-airline.com/airports): Covered SEA airports with coordinates (free)
+- [Terminator Line](https://api.terminator-airline.com/terminator): Current terminator as GeoJSON LineString (free)
+- [Flight Scores](https://api.terminator-airline.com/flights/score): Flights ranked by terminator score — airport + date (paid, x402, 0.001 USDC)
+- [Seat Recommendation](https://api.terminator-airline.com/flights/{icao24}/seat): Which side of the plane to sit on (paid, x402, 0.001 USDC)
+
+## Payments (x402)
+
+Paid endpoints return HTTP 402 with X-Payment-Required header containing payment spec. Pay 0.001 USDC on Base network, retry with X-Payment header. Agent-friendly by design.
+
+## Scoring
+
+- 90–100: Flight crosses terminator (solar altitude ≈ 0°) 🔥
+- 70–89: Golden hour window (solar altitude ±6°) 🌅
+- 50–69: Partial golden light 🌤
+- Below 50: Full daylight or night ☀️
+
+## Coverage
+
+BKK DMK HKT USM CNX SGN HAN DAD SIN KUL PEN CGK DPS RGN PNH REP VTE MNL
+
+## Site
+
+- [How it works](https://alx.github.io/terminator-airline/how-it-works/)
+- [Flight Finder](https://alx.github.io/terminator-airline/flights/)
+- [API Reference](https://alx.github.io/terminator-airline/api/)
+- [About](https://alx.github.io/terminator-airline/about/)

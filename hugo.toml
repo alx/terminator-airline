@@ -49,6 +49,11 @@ Book the right seat. Catch the light.
     url = "/how-it-works/"
     weight = 20
   [[menu.main]]
+    identifier = "api"
+    name = "API"
+    url = "/api/"
+    weight = 25
+  [[menu.main]]
     identifier = "about"
     name = "About"
     url = "/about/"
