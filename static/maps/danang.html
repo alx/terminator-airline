@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Da Nang — 3h Chrono Map | Terminator Airline</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      color: #e2e8f0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    #header {
+      flex-shrink: 0;
+      background: rgba(10,10,20,0.98);
+      border-bottom: 1px solid #1e3a5f;
+      padding: 14px 20px 12px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    #header-left {}
+
+    #header-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f59e0b;
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 16px rgba(245,158,11,0.4);
+      line-height: 1.2;
+    }
+
+    #header-subtitle {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 3px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #header-note {
+      font-size: 10px;
+      color: #334155;
+      letter-spacing: 0.05em;
+      text-align: right;
+      line-height: 1.5;
+    }
+
+    /* ── Map ── */
+    #map {
+      flex: 1;
+      background: #0a0a0f;
+    }
+
+    /* ── Legend ── */
+    .legend-panel {
+      position: absolute;
+      bottom: 20px;
+      right: 12px;
+      background: rgba(10,10,20,0.93);
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 14px 16px;
+      z-index: 500;
+      min-width: 200px;
+      backdrop-filter: blur(8px);
+    }
+
+    .legend-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 10px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 7px;
+    }
+
+    .legend-swatch {
+      width: 28px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .legend-text {
+      font-size: 11px;
+    }
+
+    .legend-name { color: #cbd5e1; font-weight: 600; }
+    .legend-dist { color: #475569; font-size: 10px; margin-top: 1px; }
+
+    .legend-divider {
+      border: none;
+      border-top: 1px solid #1e3a5f;
+      margin: 8px 0;
+    }
+
+    /* Leaflet overrides */
+    .leaflet-container { background: #0a0a0f !important; }
+    .leaflet-control-zoom {
+      border: 1px solid #1e3a5f !important;
+      border-radius: 6px !important;
+      overflow: hidden;
+    }
+    .leaflet-control-zoom a {
+      background: rgba(10,10,20,0.92) !important;
+      color: #64748b !important;
+      border-bottom: 1px solid #1e3a5f !important;
+      font-family: 'Courier New', monospace !important;
+    }
+    .leaflet-control-zoom a:hover { color: #f59e0b !important; }
+    .leaflet-control-attribution { display: none !important; }
+
+    /* Custom marker tooltips */
+    .poi-tooltip {
+      background: rgba(10,10,20,0.97) !important;
+      border: 1px solid #1e3a5f !important;
+      border-radius: 6px !important;
+      color: #e2e8f0 !important;
+      font-family: 'Courier New', monospace !important;
+      font-size: 11px !important;
+      padding: 8px 12px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important;
+      line-height: 1.7 !important;
+      white-space: nowrap !important;
+    }
+    .poi-tooltip::before { display: none !important; }
+    .poi-tooltip .tt-name { font-size: 13px; font-weight: 700; color: #f59e0b; margin-bottom: 3px; }
+    .poi-tooltip .tt-row { color: #94a3b8; }
+    .poi-tooltip .tt-row span { color: #e2e8f0; }
+
+    /* Ring labels */
+    .ring-label {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-left">
+    <div id="header-title">✈ Da Nang — 3h Chrono Map</div>
+    <div id="header-subtitle">Drive times from DAD Airport · Koh Samui region</div>
+  </div>
+  <div id="header-note">
+    Times estimated for normal traffic conditions<br>
+    Radii are approximate driving distances
+  </div>
+</div>
+
+<div style="position:relative;flex:1;display:flex;flex-direction:column;">
+  <div id="map"></div>
+
+  <!-- Legend -->
+  <div class="legend-panel">
+    <div class="legend-title">Drive Time Rings</div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(34,197,94,0.3);border:1.5px solid #22c55e;"></div>
+      <div>
+        <div class="legend-name">🟢 30 minutes</div>
+        <div class="legend-dist">~25 km radius</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(234,179,8,0.25);border:1.5px solid #eab308;"></div>
+      <div>
+        <div class="legend-name">🟡 1 hour</div>
+        <div class="legend-dist">~60 km radius</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(249,115,22,0.2);border:1.5px solid #f97316;"></div>
+      <div>
+        <div class="legend-name">🟠 2 hours</div>
+        <div class="legend-dist">~120 km radius</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(239,68,68,0.15);border:1.5px solid #ef4444;"></div>
+      <div>
+        <div class="legend-name">🔴 3 hours</div>
+        <div class="legend-dist">~200 km radius</div>
+      </div>
+    </div>
+    <hr class="legend-divider" />
+    <div style="font-size:9px;color:#334155;letter-spacing:0.06em;">TERMINATOR AIRLINE · CHRONO MAPS</div>
+  </div>
+</div>
+
+<script>
+const DAD = [16.0544, 108.2022];
+
+const map = L.map('map', {
+  center: DAD,
+  zoom: 8,
+  zoomControl: true,
+  attributionControl: false,
+});
+
+L.tileLayer('https://{s}.basemap.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19,
+  subdomains: 'abcd',
+}).addTo(map);
+
+// ── Isochrone rings (circles, largest first so they stack correctly)
+const rings = [
+  { label: '3 h',  radius: 200000, fill: 'rgba(239,68,68,0.08)',   stroke: '#ef4444', strokeOpacity: 0.5, weight: 1.5, dashArray: '6,4' },
+  { label: '2 h',  radius: 120000, fill: 'rgba(249,115,22,0.10)',  stroke: '#f97316', strokeOpacity: 0.6, weight: 1.5, dashArray: '5,3' },
+  { label: '1 h',  radius:  60000, fill: 'rgba(234,179,8,0.12)',   stroke: '#eab308', strokeOpacity: 0.7, weight: 1.5, dashArray: null  },
+  { label: '30 min', radius: 25000, fill: 'rgba(34,197,94,0.15)',  stroke: '#22c55e', strokeOpacity: 0.8, weight: 2,   dashArray: null  },
+];
+
+rings.forEach(r => {
+  L.circle(DAD, {
+    radius: r.radius,
+    color: r.stroke,
+    weight: r.weight,
+    opacity: r.strokeOpacity,
+    fillColor: r.fill,
+    fillOpacity: 1,
+    dashArray: r.dashArray || undefined,
+  }).addTo(map);
+});
+
+// Ring distance labels (positioned at top of each ring)
+function addRingLabel(center, radius, text, color) {
+  // Place label at ~top-north edge of circle
+  const latOffset = (radius / 111320);
+  const labelLatLng = [center[0] + latOffset * 0.95, center[1]];
+
+  L.marker(labelLatLng, {
+    icon: L.divIcon({
+      className: 'ring-label',
+      html: `<div style="
+        background: rgba(10,10,20,0.8);
+        border: 1px solid ${color};
+        border-radius: 4px;
+        padding: 2px 7px;
+        font-size: 10px;
+        font-family: 'Courier New', monospace;
+        color: ${color};
+        white-space: nowrap;
+        letter-spacing: 0.04em;
+        font-weight: 700;
+        transform: translateX(-50%);
+      ">${text}</div>`,
+      iconSize: [1, 1],
+      iconAnchor: [0, 0],
+    }),
+    interactive: false,
+  }).addTo(map);
+}
+
+addRingLabel(DAD, 25000, '30 min', '#22c55e');
+addRingLabel(DAD, 60000, '1 hour', '#eab308');
+addRingLabel(DAD, 120000, '2 hours', '#f97316');
+addRingLabel(DAD, 200000, '3 hours', '#ef4444');
+
+// ── Points of interest
+const pois = [
+  {
+    lat: 16.0544, lon: 108.2022,
+    icon: '✈', label: 'Da Nang Airport (DAD)',
+    sub: 'International Airport', accent: '#f59e0b', size: 24, isPrimary: true,
+    details: 'DAD · Hub airport\nLat 16.0544°N · 108.2022°E',
+  },
+  {
+    lat: 16.0678, lon: 108.2208,
+    icon: '🏙', label: 'Da Nang City Center',
+    sub: '~3 km · 10 min', accent: '#60a5fa',
+    details: '3 km from DAD\nBeach city · ~1.2M people',
+  },
+  {
+    lat: 15.8801, lon: 108.3380,
+    icon: '🏮', label: 'Hoi An Ancient Town',
+    sub: '~30 km · 45 min', accent: '#fb923c',
+    details: 'UNESCO World Heritage\n~30 km south of Da Nang',
+  },
+  {
+    lat: 15.7767, lon: 108.1240,
+    icon: '🏛', label: 'My Son Sanctuary',
+    sub: '~65 km · 1.5 h', accent: '#a78bfa',
+    details: 'Cham Hindu temple ruins\nUNESCO World Heritage',
+  },
+  {
+    lat: 16.4637, lon: 107.5909,
+    icon: '🏯', label: 'Hue City',
+    sub: '~100 km · 2 h', accent: '#f43f5e',
+    details: 'Imperial Citadel\nFormer Vietnamese capital',
+  },
+  {
+    lat: 16.1956, lon: 107.8497,
+    icon: '🌿', label: 'Bach Ma National Park',
+    sub: '~75 km · 1.5 h', accent: '#4ade80',
+    details: 'Mountain rainforest\n1450m peak · Waterfalls',
+  },
+  {
+    lat: 15.1214, lon: 108.7925,
+    icon: '⛵', label: 'Quang Ngai',
+    sub: '~130 km · 2.5 h', accent: '#38bdf8',
+    details: 'Coastal provincial city\n~130 km south of Da Nang',
+  },
+  {
+    lat: 14.3545, lon: 107.9914,
+    icon: '🏔', label: 'Kon Tum',
+    sub: '~200 km · 3 h', accent: '#c084fc',
+    details: 'Highland province capital\nCentral Highlands plateau',
+  },
+];
+
+pois.forEach(p => {
+  const size = p.isPrimary ? 32 : 22;
+  const glowColor = p.accent;
+
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="
+      font-size: ${size}px;
+      line-height: 1;
+      text-align: center;
+      width: ${size}px;
+      height: ${size}px;
+      cursor: pointer;
+      filter: drop-shadow(0 0 ${p.isPrimary ? 6 : 3}px ${glowColor}99);
+      transition: transform 0.2s;
+    " title="${p.label}">${p.icon}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    tooltipAnchor: [size / 2 + 4, 0],
+  });
+
+  const marker = L.marker([p.lat, p.lon], {
+    icon,
+    zIndexOffset: p.isPrimary ? 1000 : 0,
+  }).addTo(map);
+
+  const ttHTML = `
+    <div class="tt-name">${p.icon} ${p.label}</div>
+    <div class="tt-row">Drive time: <span>${p.sub}</span></div>
+    ${p.details.split('\n').map(line => `<div class="tt-row">${line}</div>`).join('')}
+  `;
+
+  marker.bindTooltip(ttHTML, {
+    className: 'poi-tooltip',
+    direction: 'right',
+    permanent: false,
+  });
+
+  // Permanent label for primary
+  if (p.isPrimary) {
+    L.marker([p.lat, p.lon], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="
+          margin-left: 20px;
+          margin-top: -8px;
+          background: rgba(10,10,20,0.85);
+          border: 1px solid ${p.accent};
+          border-radius: 4px;
+          padding: 2px 8px;
+          font-family: 'Courier New', monospace;
+          font-size: 11px;
+          font-weight: 700;
+          color: ${p.accent};
+          white-space: nowrap;
+          pointer-events: none;
+        ">Da Nang Airport (DAD)</div>`,
+        iconSize: [1, 1],
+        iconAnchor: [0, 0],
+      }),
+      interactive: false,
+    }).addTo(map);
+  }
+});
+
+// ── Hai Van Pass marker (scenic mountain pass between Da Nang & Hue)
+const haiVan = { lat: 16.2023, lon: 108.1123 };
+L.marker([haiVan.lat, haiVan.lon], {
+  icon: L.divIcon({
+    className: '',
+    html: `<div style="font-size:14px;filter:drop-shadow(0 0 4px rgba(148,163,184,0.6))">⛰</div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  }),
+}).addTo(map)
+  .bindTooltip(`
+    <div class="tt-name">⛰ Hai Van Pass</div>
+    <div class="tt-row">Scenic mountain pass</div>
+    <div class="tt-row">On route to Hue · 20 km north</div>
+  `, { className: 'poi-tooltip', direction: 'right' });
+
+// ── Marble Mountains
+L.marker([15.9734, 108.2660], {
+  icon: L.divIcon({
+    className: '',
+    html: `<div style="font-size:14px;filter:drop-shadow(0 0 4px rgba(148,163,184,0.5))">🪨</div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  }),
+}).addTo(map)
+  .bindTooltip(`
+    <div class="tt-name">🪨 Marble Mountains</div>
+    <div class="tt-row">5 marble & limestone hills</div>
+    <div class="tt-row">~15 km · 25 min from DAD</div>
+  `, { className: 'poi-tooltip', direction: 'right' });
+</script>
+</body>
+</html>

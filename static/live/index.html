@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Golden Sunset Zone — Live Flight Tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      color: #e2e8f0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Stats bar ── */
+    #stats-bar {
+      flex-shrink: 0;
+      height: 44px;
+      background: rgba(10,10,20,0.97);
+      border-bottom: 1px solid #1e3a5f;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow: hidden;
+      z-index: 1000;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 18px;
+      height: 100%;
+      border-right: 1px solid #1e3a5f;
+      white-space: nowrap;
+      font-size: 12px;
+      letter-spacing: 0.03em;
+    }
+
+    .stat-item .label { color: #64748b; font-size: 10px; text-transform: uppercase; }
+    .stat-item .value { color: #e2e8f0; font-weight: 600; }
+    .stat-item .gold  { color: #f59e0b; }
+    .stat-item .green { color: #22c55e; }
+    .stat-item .dim   { color: #64748b; }
+
+    #stat-title {
+      padding: 0 20px;
+      border-right: 1px solid #1e3a5f;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #f59e0b;
+      text-shadow: 0 0 12px rgba(245,158,11,0.5);
+      white-space: nowrap;
+    }
+
+    #countdown-bar {
+      height: 2px;
+      background: rgba(245,158,11,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    #countdown-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b, #ef4444);
+      transition: width 1s linear;
+    }
+
+    /* ── Main layout ── */
+    #main {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #map {
+      flex: 1;
+      background: #0a0a0f;
+    }
+
+    /* ── Leaderboard panel ── */
+    #leaderboard {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 100%;
+      background: rgba(10,10,20,0.93);
+      border-left: 1px solid #1e3a5f;
+      display: flex;
+      flex-direction: column;
+      z-index: 500;
+      backdrop-filter: blur(8px);
+    }
+
+    #lb-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #1e3a5f;
+    }
+
+    #lb-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f59e0b;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .tab-row {
+      display: flex;
+      gap: 0;
+      border: 1px solid #1e3a5f;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 5px 8px;
+      background: transparent;
+      border: none;
+      color: #64748b;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .tab-btn.active {
+      background: rgba(245,158,11,0.15);
+      color: #f59e0b;
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: rgba(255,255,255,0.04);
+      color: #94a3b8;
+    }
+
+    #lb-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    #lb-list::-webkit-scrollbar { width: 4px; }
+    #lb-list::-webkit-scrollbar-track { background: transparent; }
+    #lb-list::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 2px; }
+
+    .lb-entry {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(30,58,95,0.3);
+      transition: background 0.2s;
+    }
+
+    .lb-entry:hover { background: rgba(245,158,11,0.05); }
+
+    .lb-rank {
+      width: 22px;
+      text-align: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .lb-rank-num {
+      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .lb-info { flex: 1; min-width: 0; }
+
+    .lb-callsign {
+      font-size: 12px;
+      font-weight: 700;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lb-sub {
+      font-size: 10px;
+      color: #475569;
+      margin-top: 1px;
+    }
+
+    .lb-score {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .lb-score-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f59e0b;
+    }
+
+    .lb-score-label {
+      font-size: 9px;
+      color: #475569;
+      text-transform: uppercase;
+    }
+
+    .badge-rising {
+      font-size: 9px;
+      background: rgba(34,197,94,0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 4px;
+      padding: 1px 4px;
+      white-space: nowrap;
+    }
+
+    #lb-footer {
+      padding: 10px 14px;
+      border-top: 1px solid #1e3a5f;
+      font-size: 9px;
+      color: #1e3a5f;
+      text-align: center;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Toast / status ── */
+    #status-toast {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10,10,20,0.95);
+      border: 1px solid #ef4444;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 11px;
+      color: #fca5a5;
+      z-index: 1000;
+      display: none;
+      backdrop-filter: blur(8px);
+    }
+
+    /* ── Legend ── */
+    #legend {
+      position: absolute;
+      bottom: 20px;
+      left: 10px;
+      background: rgba(10,10,20,0.92);
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 12px 14px;
+      z-index: 500;
+      font-size: 10px;
+      backdrop-filter: blur(6px);
+      min-width: 170px;
+    }
+
+    #legend-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .legend-swatch {
+      width: 24px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .legend-label { color: #94a3b8; }
+
+    /* Leaflet overrides */
+    .leaflet-container { background: #0a0a0f !important; }
+    .leaflet-control-zoom {
+      border: 1px solid #1e3a5f !important;
+      border-radius: 6px !important;
+      overflow: hidden;
+    }
+    .leaflet-control-zoom a {
+      background: rgba(10,10,20,0.92) !important;
+      color: #64748b !important;
+      border-bottom: 1px solid #1e3a5f !important;
+      font-family: 'Courier New', monospace !important;
+    }
+    .leaflet-control-zoom a:hover { color: #f59e0b !important; }
+    .leaflet-control-attribution { display: none !important; }
+
+    .plane-tooltip {
+      background: rgba(10,10,20,0.97) !important;
+      border: 1px solid #1e3a5f !important;
+      border-radius: 6px !important;
+      color: #e2e8f0 !important;
+      font-family: 'Courier New', monospace !important;
+      font-size: 11px !important;
+      padding: 8px 12px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important;
+      line-height: 1.7 !important;
+    }
+    .plane-tooltip::before { display: none !important; }
+    .plane-tooltip .tt-callsign {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f59e0b;
+      margin-bottom: 4px;
+    }
+    .plane-tooltip .tt-row { color: #94a3b8; }
+    .plane-tooltip .tt-row span { color: #e2e8f0; }
+    .plane-tooltip .tt-score-val { color: #f59e0b; font-weight: 700; font-size: 15px; }
+    .plane-tooltip .tt-score-val.zero { color: #475569; }
+
+    .plane-icon { cursor: pointer; transition: transform 0.2s; }
+    .plane-icon:hover { transform: scale(1.3); }
+  </style>
+</head>
+<body>
+
+<!-- Stats bar -->
+<div id="stats-bar">
+  <div id="stat-title">✈ GOLDEN SUNSET ZONE</div>
+  <div class="stat-item">
+    <span class="label">UTC</span>
+    <span class="value" id="stat-utc">--:--:--</span>
+  </div>
+  <div class="stat-item">
+    <span>✈</span>
+    <span class="value" id="stat-flights">—</span>
+    <span class="label">tracked</span>
+  </div>
+  <div class="stat-item">
+    <span class="gold">🌅</span>
+    <span class="gold value" id="stat-golden">—</span>
+    <span class="label">in golden zone</span>
+  </div>
+  <div class="stat-item">
+    <span class="gold">🏆</span>
+    <span class="gold value" id="stat-best-flight">—</span>
+    <span class="label">best</span>
+    <span class="gold value" id="stat-best-score">—</span>
+  </div>
+  <div class="stat-item">
+    <span class="dim">⏱</span>
+    <span class="dim value" id="stat-countdown">—s</span>
+    <span class="label">next refresh</span>
+  </div>
+</div>
+<div id="countdown-bar"><div id="countdown-fill" style="width:100%"></div></div>
+
+<!-- Main content -->
+<div id="main">
+  <div id="map"></div>
+
+  <!-- Leaderboard -->
+  <div id="leaderboard">
+    <div id="lb-header">
+      <div id="lb-title">🏆 SESSION LEADERBOARD</div>
+      <div class="tab-row">
+        <button class="tab-btn active" id="tab-score" onclick="setTab('score')">Best Score</button>
+        <button class="tab-btn" id="tab-time" onclick="setTab('time')">Longest Time ⏱</button>
+      </div>
+    </div>
+    <div id="lb-list"></div>
+    <div id="lb-footer">TERMINATOR AIRLINE · GOLDEN ZONE TRACKER</div>
+  </div>
+
+  <!-- Legend -->
+  <div id="legend">
+    <div id="legend-title">Solar Zones</div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(245,158,11,0.35);border:1px solid #f59e0b;"></div>
+      <span class="legend-label">Golden zone (±6°)</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(255,255,255,0.7);"></div>
+      <span class="legend-label">Terminator line</span>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(10,20,60,0.55);border:1px solid #1e3a5f;"></div>
+      <span class="legend-label">Night side (&lt;−6°)</span>
+    </div>
+    <div class="legend-row">
+      <div style="font-size:16px;width:24px;text-align:center;">✈</div>
+      <span class="legend-label" style="color:#f59e0b;">In golden zone</span>
+    </div>
+    <div class="legend-row">
+      <div style="font-size:14px;width:24px;text-align:center;color:#94a3b8;">✈</div>
+      <span class="legend-label">Not in zone</span>
+    </div>
+  </div>
+
+  <!-- Status toast -->
+  <div id="status-toast"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  Constants & state
+// ─────────────────────────────────────────────
+const REFRESH_INTERVAL = 60;
+const LS_KEY = 'terminator_scores_v2';
+const BBOX = { lamin: 0, lomin: 90, lamax: 28, lomax: 125 };
+
+let currentTab = 'score';
+let flightMarkers = {};
+let lastFlights = [];
+let countdownTimer = null;
+let countdown = REFRESH_INTERVAL;
+
+// Leaderboard data from localStorage
+function loadLB() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveLB(data) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
+}
+let lbData = loadLB();
+
+// ─────────────────────────────────────────────
+//  Map init
+// ─────────────────────────────────────────────
+const map = L.map('map', {
+  center: [12, 107],
+  zoom: 5,
+  zoomControl: true,
+  attributionControl: false,
+});
+
+L.tileLayer('https://{s}.basemap.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19,
+  subdomains: 'abcd',
+}).addTo(map);
+
+// Layers for solar zones
+let nightLayer = null;
+let goldenLayer = null;
+let terminatorLayer = null;
+
+// ─────────────────────────────────────────────
+//  Solar calculations
+// ─────────────────────────────────────────────
+function calcScore(lat, lon, altitude_m) {
+  const pos = SunCalc.getPosition(new Date(), lat, lon);
+  const elev_deg = pos.altitude * 180 / Math.PI;
+  const dip = altitude_m ? Math.acos(Math.min(1, 6371000 / (6371000 + altitude_m))) * 180 / Math.PI : 0;
+  const effective_elev = elev_deg + dip * 0.5;
+  if (Math.abs(effective_elev) > 6) return { score: 0, elev: elev_deg };
+  return { score: Math.round(100 * (1 - Math.abs(effective_elev) / 6)), elev: elev_deg };
+}
+
+function getTerminatorLatForLon(lon, targetElevDeg, date) {
+  let lo = -90, hi = 90;
+  const posLo = SunCalc.getPosition(date, lo, lon).altitude * 180 / Math.PI;
+  const posHi = SunCalc.getPosition(date, hi, lon).altitude * 180 / Math.PI;
+  if (targetElevDeg < Math.min(posLo, posHi) - 1 || targetElevDeg > Math.max(posLo, posHi) + 1) return null;
+  for (let i = 0; i < 32; i++) {
+    const mid = (lo + hi) / 2;
+    const e = SunCalc.getPosition(date, mid, lon).altitude * 180 / Math.PI;
+    if (e > targetElevDeg) hi = mid; else lo = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+// Build terminator points for a given elevation target
+function buildTerminatorPoints(targetElevDeg, date, step = 2) {
+  const pts = [];
+  for (let lon = -180; lon <= 180; lon += step) {
+    const lat = getTerminatorLatForLon(lon, targetElevDeg, date);
+    if (lat !== null) pts.push([lat, lon]);
+  }
+  return pts;
+}
+
+// Determine which side is night for a lon value
+function isNightSide(lat, lon, date) {
+  const elev = SunCalc.getPosition(date, lat, lon).altitude * 180 / Math.PI;
+  return elev < -6;
+}
+
+function drawSolarZones() {
+  const date = new Date();
+
+  // Remove old layers
+  if (nightLayer) map.removeLayer(nightLayer);
+  if (goldenLayer) map.removeLayer(goldenLayer);
+  if (terminatorLayer) map.removeLayer(terminatorLayer);
+
+  // ── Terminator line (elev = 0°)
+  const termPts = buildTerminatorPoints(0, date, 1);
+  if (termPts.length > 10) {
+    // Sort by longitude to make a connected line
+    const sorted = [...termPts].sort((a, b) => a[1] - b[1]);
+    terminatorLayer = L.polyline(sorted, {
+      color: 'rgba(255,255,255,0.85)',
+      weight: 2,
+      dashArray: '8, 6',
+      opacity: 0.85,
+    }).addTo(map);
+  }
+
+  // ── Golden zone band: between -6° and +6° terminator lines
+  const upperPts = buildTerminatorPoints(6, date, 2);
+  const lowerPts = buildTerminatorPoints(-6, date, 2);
+
+  if (upperPts.length > 5 && lowerPts.length > 5) {
+    // Create polygon: upper line forward, lower line reverse
+    const upperSorted = [...upperPts].sort((a, b) => a[1] - b[1]);
+    const lowerSorted = [...lowerPts].sort((a, b) => b[1] - a[1]);
+    const polygon = [...upperSorted, ...lowerSorted];
+    goldenLayer = L.polygon(polygon, {
+      color: '#f59e0b',
+      weight: 1,
+      fillColor: '#f59e0b',
+      fillOpacity: 0.13,
+      opacity: 0.5,
+    }).addTo(map);
+  }
+
+  // ── Night side: dark overlay using canvas-based overlay approach
+  // We approximate as a large polygon by finding the night boundary
+  const nightPts = buildTerminatorPoints(-6, date, 2);
+  if (nightPts.length > 5) {
+    // Determine which pole is in night
+    const northPoleElev = SunCalc.getPosition(date, 90, 0).altitude * 180 / Math.PI;
+    const isNorthNight = northPoleElev < -6;
+
+    const sorted = [...nightPts].sort((a, b) => a[1] - b[1]);
+    const poleLat = isNorthNight ? 90 : -90;
+    const nightPolygon = [
+      ...sorted,
+      [poleLat, 180],
+      [poleLat, -180],
+    ];
+
+    nightLayer = L.polygon(nightPolygon, {
+      color: 'transparent',
+      fillColor: '#050a20',
+      fillOpacity: 0.52,
+      stroke: false,
+    }).addTo(map);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Flight markers
+// ─────────────────────────────────────────────
+function createPlaneIcon(score, heading, altitude_m) {
+  const isGolden = score > 0;
+  const color = isGolden ? '#f59e0b' : '#94a3b8';
+  const size = altitude_m
+    ? Math.max(14, Math.min(22, 14 + (altitude_m / 12000) * 8))
+    : 16;
+  const glow = isGolden
+    ? `filter: drop-shadow(0 0 4px rgba(245,158,11,0.8));`
+    : '';
+  const rot = heading || 0;
+
+  return L.divIcon({
+    className: '',
+    html: `<div class="plane-icon" style="
+      width:${size}px; height:${size}px;
+      font-size:${size}px; line-height:1;
+      color:${color};
+      transform: rotate(${rot}deg);
+      ${glow}
+      text-align:center;
+      user-select:none;
+    ">✈</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    tooltipAnchor: [size / 2 + 4, 0],
+  });
+}
+
+function tooltipHTML(f) {
+  const scoreClass = f.score > 0 ? 'tt-score-val' : 'tt-score-val zero';
+  const elevStr = f.elev !== undefined ? f.elev.toFixed(1) + '°' : '—';
+  const altStr = f.altitude ? (f.altitude / 1000).toFixed(1) + ' km' : '—';
+  const spdStr = f.speed ? Math.round(f.speed * 3.6) + ' km/h' : '—';
+  return `
+    <div class="tt-callsign">${f.callsign || f.icao}</div>
+    <div class="tt-row">Altitude: <span>${altStr}</span></div>
+    <div class="tt-row">Speed: <span>${spdStr}</span></div>
+    <div class="tt-row">Solar elev: <span>${elevStr}</span></div>
+    <div class="tt-row">Golden score: <span class="${scoreClass}">${f.score > 0 ? '⭐ ' + f.score : '—'}</span></div>
+  `;
+}
+
+function updateMarkers(flights) {
+  const seen = new Set();
+
+  flights.forEach(f => {
+    const key = f.icao;
+    seen.add(key);
+
+    if (flightMarkers[key]) {
+      // Update existing marker
+      const m = flightMarkers[key];
+      m.setLatLng([f.lat, f.lon]);
+      m.setIcon(createPlaneIcon(f.score, f.heading, f.altitude));
+      m.setTooltipContent(tooltipHTML(f));
+    } else {
+      // Create new marker
+      const icon = createPlaneIcon(f.score, f.heading, f.altitude);
+      const marker = L.marker([f.lat, f.lon], { icon, zIndexOffset: f.score > 0 ? 1000 : 0 })
+        .addTo(map)
+        .bindTooltip(tooltipHTML(f), {
+          className: 'plane-tooltip',
+          direction: 'right',
+          permanent: false,
+          sticky: false,
+        });
+      flightMarkers[key] = marker;
+    }
+  });
+
+  // Remove stale markers
+  Object.keys(flightMarkers).forEach(key => {
+    if (!seen.has(key)) {
+      map.removeLayer(flightMarkers[key]);
+      delete flightMarkers[key];
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+//  Stats bar
+// ─────────────────────────────────────────────
+function updateStats(flights) {
+  const golden = flights.filter(f => f.score > 0);
+  const best = golden.reduce((b, f) => f.score > (b?.score || 0) ? f : b, null);
+
+  document.getElementById('stat-flights').textContent = flights.length;
+  document.getElementById('stat-golden').textContent = golden.length;
+
+  if (best) {
+    document.getElementById('stat-best-flight').textContent = best.callsign || best.icao;
+    document.getElementById('stat-best-score').textContent = best.score;
+  } else {
+    document.getElementById('stat-best-flight').textContent = '—';
+    document.getElementById('stat-best-score').textContent = '—';
+  }
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getUTCHours()).padStart(2, '0');
+  const m = String(now.getUTCMinutes()).padStart(2, '0');
+  const s = String(now.getUTCSeconds()).padStart(2, '0');
+  document.getElementById('stat-utc').textContent = `${h}:${m}:${s}`;
+}
+
+// ─────────────────────────────────────────────
+//  Leaderboard
+// ─────────────────────────────────────────────
+function updateLBData(flights) {
+  const now = Date.now();
+  flights.forEach(f => {
+    if (f.score <= 0) return;
+    const key = f.callsign || f.icao;
+    const existing = lbData[key];
+    if (existing) {
+      const wasRising = f.score > (existing.lastScore || 0);
+      existing.rising = wasRising;
+      existing.lastScore = f.score;
+      existing.maxScore = Math.max(existing.maxScore, f.score);
+      existing.totalMinutes = (existing.totalMinutes || 0) + 1;
+      existing.history = existing.history || [];
+      existing.history.push({ t: now, score: f.score });
+      if (existing.history.length > 60) existing.history.shift();
+    } else {
+      lbData[key] = {
+        maxScore: f.score,
+        lastScore: f.score,
+        totalMinutes: 1,
+        rising: false,
+        history: [{ t: now, score: f.score }],
+      };
+    }
+  });
+  saveLB(lbData);
+}
+
+function setTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-score').classList.toggle('active', tab === 'score');
+  document.getElementById('tab-time').classList.toggle('active', tab === 'time');
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const entries = Object.entries(lbData).map(([callsign, d]) => ({ callsign, ...d }));
+  const medals = ['🥇', '🥈', '🥉'];
+
+  let sorted;
+  if (currentTab === 'score') {
+    sorted = entries.sort((a, b) => b.maxScore - a.maxScore);
+  } else {
+    sorted = entries.sort((a, b) => b.totalMinutes - a.totalMinutes);
+  }
+
+  const top10 = sorted.slice(0, 10);
+  const container = document.getElementById('lb-list');
+
+  if (top10.length === 0) {
+    container.innerHTML = `
+      <div style="padding:30px 16px; text-align:center; color:#1e3a5f; font-size:11px; line-height:2;">
+        NO GOLDEN ZONE FLIGHTS<br>YET THIS SESSION<br><br>
+        <span style="color:#334155;">Waiting for planes to enter<br>the terminator band…</span>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = top10.map((entry, i) => {
+    const medal = medals[i] || `<span class="lb-rank-num">${i + 1}</span>`;
+    const rising = entry.rising ? '<span class="badge-rising">Rising ↑</span>' : '';
+    const subLine = currentTab === 'score'
+      ? `Max: ${entry.maxScore} · Current: ${entry.lastScore}`
+      : `${entry.totalMinutes} min · Score: ${entry.maxScore}`;
+    const scoreVal = currentTab === 'score' ? entry.maxScore : entry.totalMinutes;
+    const scoreLabel = currentTab === 'score' ? 'pts' : 'min';
+
+    return `
+      <div class="lb-entry">
+        <div class="lb-rank">${medal}</div>
+        <div class="lb-info">
+          <div class="lb-callsign">${entry.callsign} ${rising}</div>
+          <div class="lb-sub">${subLine}</div>
+        </div>
+        <div class="lb-score">
+          <div class="lb-score-val">${scoreVal}</div>
+          <div class="lb-score-label">${scoreLabel}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+//  OpenSky data fetch
+// ─────────────────────────────────────────────
+async function fetchFlights() {
+  const url = `https://opensky-network.org/api/states/all?lamin=${BBOX.lamin}&lomin=${BBOX.lomin}&lamax=${BBOX.lamax}&lomax=${BBOX.lomax}`;
+  const resp = await fetch(url, { signal: AbortSignal.timeout(20000) });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const data = await resp.json();
+  return data.states || [];
+}
+
+function parseStates(states) {
+  return states
+    .filter(s => {
+      const lon = s[5], lat = s[6], alt = s[7], onGround = s[8];
+      return lon !== null && lat !== null && alt !== null && !onGround && alt >= 500;
+    })
+    .map(s => {
+      const [icao24, callsign, , , , lon, lat, alt, , vel, heading] = s;
+      const { score, elev } = calcScore(lat, lon, alt);
+      return {
+        icao: icao24,
+        callsign: (callsign || '').trim() || icao24,
+        lat, lon,
+        altitude: alt,
+        speed: vel,
+        heading: heading,
+        score,
+        elev,
+      };
+    });
+}
+
+function showToast(msg, isError = false) {
+  const el = document.getElementById('status-toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.borderColor = isError ? '#ef4444' : '#1e3a5f';
+  el.style.color = isError ? '#fca5a5' : '#94a3b8';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+// ─────────────────────────────────────────────
+//  Countdown timer
+// ─────────────────────────────────────────────
+function startCountdown() {
+  countdown = REFRESH_INTERVAL;
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    countdown = Math.max(0, countdown - 1);
+    document.getElementById('stat-countdown').textContent = countdown + 's';
+    const pct = (countdown / REFRESH_INTERVAL) * 100;
+    document.getElementById('countdown-fill').style.width = pct + '%';
+    if (countdown <= 10) {
+      document.getElementById('countdown-fill').style.background = 'linear-gradient(90deg,#ef4444,#dc2626)';
+    } else {
+      document.getElementById('countdown-fill').style.background = 'linear-gradient(90deg,#f59e0b,#ef4444)';
+    }
+  }, 1000);
+}
+
+// ─────────────────────────────────────────────
+//  Main refresh cycle
+// ─────────────────────────────────────────────
+async function refresh() {
+  drawSolarZones();
+
+  try {
+    const states = await fetchFlights();
+    lastFlights = parseStates(states);
+    updateMarkers(lastFlights);
+    updateStats(lastFlights);
+    updateLBData(lastFlights);
+    renderLeaderboard();
+    document.getElementById('stat-flights').style.color = '#e2e8f0';
+  } catch (err) {
+    console.warn('OpenSky error:', err);
+    showToast('API rate limited — retrying in 60s', true);
+    // Re-score last known flights with updated solar position
+    if (lastFlights.length > 0) {
+      lastFlights = lastFlights.map(f => {
+        const { score, elev } = calcScore(f.lat, f.lon, f.altitude);
+        return { ...f, score, elev };
+      });
+      updateMarkers(lastFlights);
+      updateStats(lastFlights);
+    }
+  }
+
+  startCountdown();
+}
+
+// ─────────────────────────────────────────────
+//  Clock update every second
+// ─────────────────────────────────────────────
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─────────────────────────────────────────────
+//  Start
+// ─────────────────────────────────────────────
+refresh();
+setInterval(refresh, REFRESH_INTERVAL * 1000);
+
+// Initial leaderboard render (from localStorage)
+renderLeaderboard();
+</script>
+</body>
+</html>

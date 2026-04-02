@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Long Thanh Airport — 3h Chrono Map | Terminator Airline</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      color: #e2e8f0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    #header {
+      flex-shrink: 0;
+      background: rgba(10,10,20,0.98);
+      border-bottom: 1px solid #1e3a5f;
+      padding: 14px 20px 12px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    #header-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f59e0b;
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 16px rgba(245,158,11,0.4);
+      line-height: 1.2;
+    }
+
+    #header-badges {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 9px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .badge-opening  { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-east     { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+
+    #east-callout {
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 6px;
+      padding: 8px 14px;
+      max-width: 280px;
+    }
+
+    #east-callout .callout-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #f59e0b;
+      margin-bottom: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    #east-callout .callout-body {
+      font-size: 10px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    /* ── Map ── */
+    #map {
+      flex: 1;
+      background: #0a0a0f;
+    }
+
+    /* ── Legend ── */
+    .legend-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 12px;
+      background: rgba(10,10,20,0.93);
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 14px 16px;
+      z-index: 500;
+      min-width: 200px;
+      backdrop-filter: blur(8px);
+    }
+
+    .legend-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 10px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 7px;
+    }
+
+    .legend-swatch {
+      width: 28px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .legend-text {}
+    .legend-name { color: #cbd5e1; font-weight: 600; font-size: 11px; }
+    .legend-dist { color: #475569; font-size: 10px; margin-top: 1px; }
+
+    .legend-divider { border: none; border-top: 1px solid #1e3a5f; margin: 8px 0; }
+
+    /* East compass indicator */
+    #east-compass {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(10,10,20,0.93);
+      border: 1px solid rgba(245,158,11,0.4);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      backdrop-filter: blur(6px);
+    }
+
+    #east-compass .compass-arrow {
+      font-size: 20px;
+      color: #f59e0b;
+      line-height: 1;
+    }
+
+    #east-compass .compass-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #f59e0b;
+      letter-spacing: 0.08em;
+      margin-top: 1px;
+    }
+
+    /* Leaflet overrides */
+    .leaflet-container { background: #0a0a0f !important; }
+    .leaflet-control-zoom {
+      border: 1px solid #1e3a5f !important;
+      border-radius: 6px !important;
+      overflow: hidden;
+    }
+    .leaflet-control-zoom a {
+      background: rgba(10,10,20,0.92) !important;
+      color: #64748b !important;
+      border-bottom: 1px solid #1e3a5f !important;
+      font-family: 'Courier New', monospace !important;
+    }
+    .leaflet-control-zoom a:hover { color: #f59e0b !important; }
+    .leaflet-control-attribution { display: none !important; }
+
+    .poi-tooltip {
+      background: rgba(10,10,20,0.97) !important;
+      border: 1px solid #1e3a5f !important;
+      border-radius: 6px !important;
+      color: #e2e8f0 !important;
+      font-family: 'Courier New', monospace !important;
+      font-size: 11px !important;
+      padding: 8px 12px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important;
+      line-height: 1.7 !important;
+      white-space: nowrap !important;
+    }
+    .poi-tooltip::before { display: none !important; }
+    .poi-tooltip .tt-name { font-size: 13px; font-weight: 700; color: #f59e0b; margin-bottom: 3px; }
+    .poi-tooltip .tt-name.highlight { color: #fb923c; }
+    .poi-tooltip .tt-row { color: #94a3b8; }
+    .poi-tooltip .tt-row span { color: #e2e8f0; }
+    .poi-tooltip .tt-highlight { color: #f59e0b; font-weight: 600; }
+
+    .ring-label {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    /* East direction arrow on map */
+    .east-arrow-marker {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <div id="header-title">✈ Long Thanh — 3h Chrono Map</div>
+    <div id="header-badges">
+      <span class="badge badge-opening">Opens 2026</span>
+      <span class="badge badge-east">East Side Focus</span>
+    </div>
+  </div>
+  <div id="east-callout">
+    <div class="callout-title">WHY EAST?</div>
+    <div class="callout-body">
+      Best connections to beach resorts<br>
+      + Da Lat highlands. Long Thanh puts<br>
+      Vung Tau, Ho Tram &amp; Mui Ne within<br>
+      easy reach — closer than from HCMC.
+    </div>
+  </div>
+</div>
+
+<div style="position:relative;flex:1;display:flex;flex-direction:column;">
+  <div id="map"></div>
+
+  <!-- East compass -->
+  <div id="east-compass">
+    <div class="compass-arrow">→</div>
+    <div class="compass-label">EAST</div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend-panel">
+    <div class="legend-title">Drive Time Rings</div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(34,197,94,0.3);border:1.5px solid #22c55e;"></div>
+      <div>
+        <div class="legend-name">🟢 30 minutes</div>
+        <div class="legend-dist">~25 km radius</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(234,179,8,0.25);border:1.5px solid #eab308;"></div>
+      <div>
+        <div class="legend-name">🟡 1 hour</div>
+        <div class="legend-dist">~60 km radius</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(249,115,22,0.2);border:1.5px solid #f97316;"></div>
+      <div>
+        <div class="legend-name">🟠 2 hours</div>
+        <div class="legend-dist">~120 km radius</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(239,68,68,0.15);border:1.5px solid #ef4444;"></div>
+      <div>
+        <div class="legend-name">🔴 3 hours</div>
+        <div class="legend-dist">~200 km radius</div>
+      </div>
+    </div>
+    <hr class="legend-divider" />
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:rgba(251,146,60,0.3);border:2px solid #fb923c;"></div>
+      <div>
+        <div class="legend-name" style="color:#fb923c;">East highlights</div>
+        <div class="legend-dist">Beach &amp; highland destinations</div>
+      </div>
+    </div>
+    <hr class="legend-divider" />
+    <div style="font-size:9px;color:#334155;letter-spacing:0.06em;">TERMINATOR AIRLINE · CHRONO MAPS</div>
+  </div>
+</div>
+
+<script>
+const LT = [10.79, 107.01];  // Long Thanh Airport
+
+const map = L.map('map', {
+  center: [10.8, 107.4],   // shift view slightly east to show east focus
+  zoom: 8,
+  zoomControl: true,
+  attributionControl: false,
+});
+
+L.tileLayer('https://{s}.basemap.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19,
+  subdomains: 'abcd',
+}).addTo(map);
+
+// ── Isochrone rings (largest first)
+const rings = [
+  { label: '3 h',    radius: 200000, fill: 'rgba(239,68,68,0.08)',   stroke: '#ef4444', strokeOpacity: 0.5, weight: 1.5, dashArray: '6,4' },
+  { label: '2 h',    radius: 120000, fill: 'rgba(249,115,22,0.10)',  stroke: '#f97316', strokeOpacity: 0.6, weight: 1.5, dashArray: '5,3' },
+  { label: '1 h',    radius:  60000, fill: 'rgba(234,179,8,0.12)',   stroke: '#eab308', strokeOpacity: 0.7, weight: 1.5, dashArray: null  },
+  { label: '30 min', radius:  25000, fill: 'rgba(34,197,94,0.15)',   stroke: '#22c55e', strokeOpacity: 0.8, weight: 2,   dashArray: null  },
+];
+
+rings.forEach(r => {
+  L.circle(LT, {
+    radius: r.radius,
+    color: r.stroke,
+    weight: r.weight,
+    opacity: r.strokeOpacity,
+    fillColor: r.fill,
+    fillOpacity: 1,
+    dashArray: r.dashArray || undefined,
+  }).addTo(map);
+});
+
+// ── Ring labels
+function addRingLabel(center, radius, text, color, angleRad) {
+  // Default: place north; optionally shift by angle
+  const ang = angleRad !== undefined ? angleRad : Math.PI / 2; // north
+  const latOffset = (radius / 111320) * Math.sin(ang);
+  const lonOffset = (radius / (111320 * Math.cos(center[0] * Math.PI / 180))) * Math.cos(ang);
+
+  L.marker([center[0] + latOffset * 0.95, center[1] + lonOffset * 0.95], {
+    icon: L.divIcon({
+      className: 'ring-label',
+      html: `<div style="
+        background: rgba(10,10,20,0.8);
+        border: 1px solid ${color};
+        border-radius: 4px;
+        padding: 2px 7px;
+        font-size: 10px;
+        font-family: 'Courier New', monospace;
+        color: ${color};
+        white-space: nowrap;
+        letter-spacing: 0.04em;
+        font-weight: 700;
+        transform: translateX(-50%);
+      ">${text}</div>`,
+      iconSize: [1, 1],
+      iconAnchor: [0, 0],
+    }),
+    interactive: false,
+  }).addTo(map);
+}
+
+// Place labels on north side
+addRingLabel(LT, 25000,  '30 min', '#22c55e', Math.PI / 2);
+addRingLabel(LT, 60000,  '1 hour', '#eab308', Math.PI / 2);
+addRingLabel(LT, 120000, '2 hours', '#f97316', Math.PI / 2);
+addRingLabel(LT, 200000, '3 hours', '#ef4444', Math.PI / 2);
+
+// ── East direction indicator arrow on map
+// Draw a subtle east arrow line from airport
+const eastEndLon = LT[1] + 1.8;
+L.polyline([LT, [LT[0], eastEndLon]], {
+  color: 'rgba(245,158,11,0.2)',
+  weight: 1,
+  dashArray: '4, 4',
+}).addTo(map);
+
+// ── Points of interest
+const pois = [
+  {
+    lat: 10.79, lon: 107.01,
+    icon: '✈', label: 'Long Thanh Airport',
+    accent: '#f59e0b', size: 28, isPrimary: true,
+    isEast: false,
+    sub: 'New HCMC International — 2026',
+    details: 'Long Thanh · Dong Nai Province\n10.79°N · 107.01°E · Opens 2026',
+  },
+  {
+    lat: 10.7769, lon: 106.7009,
+    icon: '🏙', label: 'HCMC / Saigon',
+    accent: '#60a5fa', size: 20,
+    isEast: false,
+    sub: '~35 km west · 45 min',
+    details: '~35 km west of Long Thanh\nHo Chi Minh City · 9M people',
+  },
+  {
+    lat: 10.3460, lon: 107.0843,
+    icon: '🏖', label: 'Vung Tau',
+    accent: '#fb923c', size: 22, isEast: true, highlight: true,
+    sub: '~70 km south-east · 1 h 15 min',
+    details: 'Beach resort city\n~70 km from Long Thanh\nFaster via new airport than from HCMC!',
+  },
+  {
+    lat: 10.4500, lon: 107.2800,
+    icon: '🌊', label: 'Ho Tram / Long Hai',
+    accent: '#38bdf8', size: 22, isEast: true, highlight: true,
+    sub: '~80 km east coast · 1.5 h',
+    details: 'East coast beach strip\nHo Tram & Long Hai resorts\nDirect access from Long Thanh',
+  },
+  {
+    lat: 10.9289, lon: 108.1020,
+    icon: '🌅', label: 'Phan Thiet / Mui Ne',
+    accent: '#f97316', size: 22, isEast: true, highlight: true,
+    sub: '~150 km east · 2 h',
+    details: 'Mui Ne kite-surfing capital\nPhan Thiet beach town\n~150 km from Long Thanh',
+  },
+  {
+    lat: 11.9465, lon: 108.4419,
+    icon: '🏔', label: 'Da Lat',
+    accent: '#c084fc', size: 20, isEast: true, highlight: true,
+    sub: '~250 km NE · 3 h (near limit)',
+    details: 'Highland resort city · 1500m altitude\nCool climate · Pine forests\nNear 3-hour ring from Long Thanh',
+  },
+  {
+    lat: 10.0452, lon: 105.7469,
+    icon: '🌾', label: 'Can Tho',
+    accent: '#4ade80', size: 18,
+    isEast: false,
+    sub: '~175 km west · 2.5 h',
+    details: 'Mekong Delta capital\nFloating markets\n~175 km west',
+  },
+  {
+    lat: 10.9574, lon: 106.8426,
+    icon: '🏭', label: 'Bien Hoa',
+    accent: '#94a3b8', size: 18,
+    isEast: false,
+    sub: '~25 km north · 30 min',
+    details: 'Industrial & manufacturing hub\nDong Nai province\n~25 km from Long Thanh',
+  },
+];
+
+pois.forEach(p => {
+  const size = p.size || 20;
+  const glowColor = p.accent;
+  const glowSize = p.highlight ? 8 : (p.isPrimary ? 6 : 3);
+  const glowOpacity = p.highlight ? '0.9' : '0.6';
+
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="
+      font-size: ${size}px;
+      line-height: 1;
+      text-align: center;
+      width: ${size}px;
+      height: ${size}px;
+      cursor: pointer;
+      filter: drop-shadow(0 0 ${glowSize}px ${glowColor}${glowOpacity === '0.9' ? 'e6' : '99'});
+      transition: transform 0.2s;
+      position: relative;
+    ">${p.icon}${p.highlight ? `<div style="
+      position: absolute;
+      top: -3px; right: -3px;
+      width: 7px; height: 7px;
+      background: #fb923c;
+      border-radius: 50%;
+      border: 1px solid #0a0a0f;
+    "></div>` : ''}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    tooltipAnchor: [size / 2 + 4, 0],
+  });
+
+  const marker = L.marker([p.lat, p.lon], {
+    icon,
+    zIndexOffset: p.isPrimary ? 2000 : (p.highlight ? 1000 : 0),
+  }).addTo(map);
+
+  const nameClass = p.highlight ? 'tt-name highlight' : 'tt-name';
+  const eastBadge = p.isEast && p.highlight
+    ? `<div style="display:inline-block;font-size:9px;background:rgba(251,146,60,0.15);color:#fb923c;border:1px solid rgba(251,146,60,0.3);border-radius:3px;padding:1px 5px;margin-left:6px;vertical-align:middle;">EAST ★</div>`
+    : '';
+
+  const ttHTML = `
+    <div class="${nameClass}">${p.icon} ${p.label}${eastBadge}</div>
+    <div class="tt-row">Drive time: <span>${p.sub}</span></div>
+    ${p.details.split('\n').map((line, i) => {
+      const cls = (i === 2 && p.highlight) ? 'tt-row tt-highlight' : 'tt-row';
+      return `<div class="${cls}">${line}</div>`;
+    }).join('')}
+  `;
+
+  marker.bindTooltip(ttHTML, {
+    className: 'poi-tooltip',
+    direction: p.lon < 107.01 ? 'left' : 'right',
+    permanent: false,
+  });
+
+  // Airport primary label
+  if (p.isPrimary) {
+    L.marker([p.lat, p.lon], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="
+          margin-left: 18px;
+          margin-top: -8px;
+          background: rgba(10,10,20,0.88);
+          border: 1px solid ${p.accent};
+          border-radius: 4px;
+          padding: 2px 8px;
+          font-family: 'Courier New', monospace;
+          font-size: 11px;
+          font-weight: 700;
+          color: ${p.accent};
+          white-space: nowrap;
+          pointer-events: none;
+        ">Long Thanh Intl · 2026</div>`,
+        iconSize: [1, 1],
+        iconAnchor: [0, 0],
+      }),
+      interactive: false,
+    }).addTo(map);
+  }
+});
+
+// ── East region highlight arc annotation
+// Draw a curved bracket on the east side to indicate "east focus"
+const arcCenter = LT;
+const arcRadius = 130000; // ~130km
+const startAngle = -60 * Math.PI / 180; // roughly SE
+const endAngle   =  60 * Math.PI / 180; // roughly NE
+const arcPoints = [];
+for (let a = startAngle; a <= endAngle; a += 2 * Math.PI / 180) {
+  const lat = arcCenter[0] + (arcRadius / 111320) * Math.sin(Math.PI / 2 - a);
+  const lon = arcCenter[1] + (arcRadius / (111320 * Math.cos(arcCenter[0] * Math.PI / 180))) * Math.cos(Math.PI / 2 - a);
+  arcPoints.push([lat, lon]);
+}
+
+L.polyline(arcPoints, {
+  color: 'rgba(251,146,60,0.4)',
+  weight: 2,
+  dashArray: '6, 4',
+}).addTo(map);
+
+// East label near arc midpoint
+const midAngle = 0;
+const eastLabelLat = arcCenter[0] + (arcRadius * 1.08 / 111320) * Math.sin(Math.PI / 2 - midAngle);
+const eastLabelLon = arcCenter[1] + (arcRadius * 1.08 / (111320 * Math.cos(arcCenter[0] * Math.PI / 180))) * Math.cos(Math.PI / 2 - midAngle);
+
+L.marker([eastLabelLat, eastLabelLon], {
+  icon: L.divIcon({
+    className: '',
+    html: `<div style="
+      background: rgba(251,146,60,0.12);
+      border: 1px solid rgba(251,146,60,0.4);
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fb923c;
+      white-space: nowrap;
+      transform: translateX(-50%);
+      pointer-events: none;
+      letter-spacing: 0.06em;
+    ">★ EAST HIGHLIGHT ZONE ★</div>`,
+    iconSize: [1, 1],
+    iconAnchor: [0, 0],
+  }),
+  interactive: false,
+}).addTo(map);
+</script>
+</body>
+</html>
