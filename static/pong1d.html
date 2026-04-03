@@ -67,7 +67,7 @@
 
   /* Main title */
   .main-title {
-    font-size: 72pt;
+    font-size: 58pt;
     font-weight: normal;
     letter-spacing: 0.06em;
     line-height: 1;
@@ -129,9 +129,10 @@
     align-items: center;
     gap: 3px;
     width: 100%;
-    border: 3px solid #000;
-    padding: 5mm 8mm;
+    padding: 4mm 0;
+    border-bottom: 2px dotted #000;
   }
+  .contact-row:last-child { border-bottom: none; }
 
   .contact-label {
     font-size: 7pt;
@@ -144,16 +145,6 @@
     letter-spacing: 0.05em;
     word-break: break-all;
     text-align: center;
-  }
-
-  /* Bottom bar */
-  .bottom-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    font-size: 7pt;
-    letter-spacing: 0.15em;
   }
 
   .pixel-lives {
@@ -205,9 +196,7 @@
   </div>
 
   <!-- Bottom bar -->
-  <div class="bottom-bar">
-    <div class="pixel-lives">♥ ♥ ♥</div>
-    <div>© PONG 1D — ALL RIGHTS RESERVED</div>
+  <div style="display:flex;justify-content:center;width:100%;">
     <div class="pixel-lives">♥ ♥ ♥</div>
   </div>
 
